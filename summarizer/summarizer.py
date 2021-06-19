@@ -26,7 +26,9 @@ ISSUE_ID = 1413
 class Summarizer:
     """Download and summarize Gitlab conversations."""
 
-    def __init__(self, project_id, issue_id):
+    def __init__(self, project_id: int, issue_id: int, database: dict):
+
+        self.database: dict = database
 
         with open("./data/secrets/secrets.json", "r") as f:
             secrets = json.load(f)
@@ -40,14 +42,14 @@ class Summarizer:
         self.issue = self.project.issues.get(issue_id)
         self.discussions = self.issue.discussions.list()
 
-        self.conversation_dict = {}
+        self.conversation: dict = {}
 
     def _summarise(self, summarizer) -> dict:
 
         parsers = {}
         summaries = {}
 
-        for (k, v) in self.conversation_dict.items():
+        for (k, v) in self.conversation.items():
 
             parsers[k] = PlaintextParser.from_string(v, Tokenizer("english"))
 
@@ -64,45 +66,48 @@ class Summarizer:
 
     def summarize_with_kl(self) -> dict:
         kld_conversation: dict = self._summarise(KLSummarizer())
-        with open("./data/summarized/kld_conversation.json", "w") as fp:
+        with open(self.database["KLD"]["path"], "w") as fp:
             json.dump(kld_conversation, fp)
         return kld_conversation
 
     def summarize_with_lsa(self):
         lsa_conversation = self._summarise(LsaSummarizer())
-        with open("./data/summarized/lsa_conversation.json", "w") as fp:
+        with open(self.database["LSA"]["path"], "w") as fp:
             json.dump(lsa_conversation, fp)
         return lsa_conversation
 
     def summarize_with_lexrank(self) -> dict:
         lex_rank_conversation: dict = self._summarise(LexRankSummarizer())
-        with open("./data/summarized/lex_rank_conversation.json", "w") as fp:
+        with open(self.database["LEXRANK"]["path"], "w") as fp:
             json.dump(lex_rank_conversation, fp)
         return lex_rank_conversation
 
     def summarize_with_textrank(self) -> dict:
         text_rank_conversation: dict = self._summarise(TextRankSummarizer())
-        with open("./data/summarized/text_rank_conversation.json", "w") as fp:
+        with open(self.database["TEXTRANK"]["path"], "w") as fp:
             json.dump(text_rank_conversation, fp)
         return text_rank_conversation
 
     def summarise_with_spacy(self) -> dict:
 
-        summaries = {}
+        spacy_conversation = {}
 
         nlp = spacy.load("en_core_web_sm")
 
         nlp.add_pipe("textrank")
 
-        for (k, v) in self.conversation_dict.items():
+        for (k, v) in self.conversation.items():
 
             doc = nlp(v)
             tr = doc._.textrank
-            summaries[k] = " ".join(
+            spacy_conversation[k] = " ".join(
                 str(x) for x in tr.summary(limit_phrases=8, limit_sentences=2)
             ).strip()
 
-        return summaries
+        with open(self.database["SPACY"]["path"], "w") as fp:
+            json.dump(spacy_conversation, fp)
+
+        return spacy_conversation
 
     def add_author_to_database(self, author_name, author_avatar_url):
         pass
@@ -140,15 +145,15 @@ class Summarizer:
                         no_punct=False,
                     )
 
-                    if not self.conversation_dict.get(author):
-                        self.conversation_dict[author] = body
+                    if not self.conversation.get(author):
+                        self.conversation[author] = body
                     else:
-                        self.conversation_dict[author] += " " + body
+                        self.conversation[author] += " " + body
 
         with open() as fp:
-            json.dump(self.conversation_dict, fp)
+            json.dump(self.conversation, fp)
 
         with open("./data/conversation/conversation.json", "w") as fp:
-            json.dump(self.conversation_dict, fp)
+            json.dump(self.conversation, fp)
 
-        return self.conversation_dict
+        return self.conversation
