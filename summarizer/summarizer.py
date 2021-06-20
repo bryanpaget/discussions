@@ -1,12 +1,11 @@
 #!/usr/bin/env python
 
 from gitlab.v4.objects import users
-from .utils import remove_markdown_urls, remove_quoted
+from utils import remove_markdown_urls, remove_quoted, clean_up
 
 import re
 import json
 import gitlab
-from cleantext import clean
 
 import spacy
 import pytextrank
@@ -35,7 +34,7 @@ class Summarizer:
 
         import os
 
-        self.authors = []
+        self.authors: set = set()
 
         print(os.getcwd())
         with open(self.database["SECRETS"]["path"], "r") as f:
@@ -131,27 +130,7 @@ class Summarizer:
             with open(self.database["PEOPLE"]["path"], "w") as fp:
                 json.dump(entry, fp)
 
-        self.authors.append(username)
-
-    @staticmethod
-    def clean_up(comment):
-        comment = remove_quoted(comment)
-        comment = remove_markdown_urls(comment)
-        comment = clean(
-            comment,
-            fix_unicode=True,
-            to_ascii=True,
-            lower=False,
-            no_line_breaks=True,
-            no_urls=True,
-            no_emails=True,
-            no_phone_numbers=True,
-            no_numbers=False,
-            no_digits=False,
-            no_currency_symbols=True,
-            no_punct=False,
-        )
-        return comment
+        self.authors.add(username)
 
     def get_discussions(self) -> dict:
         for discussion in self.discussions:
@@ -168,7 +147,7 @@ class Summarizer:
 
                 if not body.startswith(self.ignored):
 
-                    body = self.clean_up(body)
+                    body = clean_up(body)
 
                     entry = {
                         n: {
