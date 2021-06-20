@@ -36,7 +36,6 @@ class Summarizer:
 
         self.authors: set = set()
 
-        print(os.getcwd())
         with open(self.database["SECRETS"]["path"], "r") as f:
             secrets = json.load(f)
             self.private_token = secrets["private_token"]
@@ -52,15 +51,24 @@ class Summarizer:
         self.conversation: dict = {}
 
     def _summarise(self, summarizer):
+        """Summarizes the conversation held in self using summarizer.
+
+        Args:
+            summarizer (AbstractSummarizer): a summarizer from sumy.
+
+        Returns:
+            dict: the summarized conversation in the following format:
+        """
 
         parsers = {}
         summaries = {}
 
         for (k, v) in self.conversation.items():
 
-            print("V:", v)
+            # k is just an index (0, 1, 2, ...)
+            # v has the following format: {'gitlab_comment_id': ..., 'username': ..., 'name': ..., 'comment': ...}
 
-            parsers[k] = PlaintextParser.from_string(v, Tokenizer("english"))
+            parsers[k] = PlaintextParser.from_string(v["comment"], Tokenizer("english"))
 
             for (k, v) in parsers.items():
                 summaries[k] = summarizer(v.document, 2)
@@ -103,7 +111,7 @@ class Summarizer:
 
         for n, (k, v) in enumerate(self.conversation.items()):
 
-            doc = nlp(v[n]["comment"])
+            doc = nlp(v["comment"])
             tr = doc._.textrank
             spacy_conversation[k] = " ".join(
                 str(x) for x in tr.summary(limit_phrases=8, limit_sentences=2)
@@ -150,12 +158,10 @@ class Summarizer:
                     body = clean_up(body)
 
                     entry = {
-                        n: {
-                            "gitlab_comment_id": gitlab_comment_id,
-                            "username": username,
-                            "name": name,
-                            "comment": body,
-                        }
+                        "gitlab_comment_id": gitlab_comment_id,
+                        "username": username,
+                        "name": name,
+                        "comment": body,
                     }
 
                     self.conversation[n] = entry
