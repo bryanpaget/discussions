@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 
+from gitlab.v4.objects import users
 from .utils import remove_markdown_urls, remove_quoted
 
 import re
@@ -26,11 +27,18 @@ ISSUE_ID = 1413
 class Summarizer:
     """Download and summarize Gitlab conversations."""
 
+    ignored = ("changed the description", "mentioned in issue")
+
     def __init__(self, project_id: int, issue_id: int, database: dict):
 
         self.database: dict = database
 
-        with open("./data/secrets/secrets.json", "r") as f:
+        import os
+
+        self.authors = []
+
+        print(os.getcwd())
+        with open(self.database["SECRETS"]["path"], "r") as f:
             secrets = json.load(f)
             self.private_token = secrets["private_token"]
 
@@ -44,12 +52,14 @@ class Summarizer:
 
         self.conversation: dict = {}
 
-    def _summarise(self, summarizer) -> dict:
+    def _summarise(self, summarizer):
 
         parsers = {}
         summaries = {}
 
         for (k, v) in self.conversation.items():
+
+            print("V:", v)
 
             parsers[k] = PlaintextParser.from_string(v, Tokenizer("english"))
 
@@ -64,41 +74,37 @@ class Summarizer:
 
         return summaries
 
-    def summarize_with_kl(self) -> dict:
+    def summarize_with_kld(self) -> None:
         kld_conversation: dict = self._summarise(KLSummarizer())
         with open(self.database["KLD"]["path"], "w") as fp:
             json.dump(kld_conversation, fp)
-        return kld_conversation
 
-    def summarize_with_lsa(self):
+    def summarize_with_lsa(self) -> None:
         lsa_conversation = self._summarise(LsaSummarizer())
         with open(self.database["LSA"]["path"], "w") as fp:
             json.dump(lsa_conversation, fp)
-        return lsa_conversation
 
-    def summarize_with_lexrank(self) -> dict:
+    def summarize_with_lexrank(self) -> None:
         lex_rank_conversation: dict = self._summarise(LexRankSummarizer())
         with open(self.database["LEXRANK"]["path"], "w") as fp:
             json.dump(lex_rank_conversation, fp)
-        return lex_rank_conversation
 
-    def summarize_with_textrank(self) -> dict:
+    def summarize_with_textrank(self) -> None:
         text_rank_conversation: dict = self._summarise(TextRankSummarizer())
         with open(self.database["TEXTRANK"]["path"], "w") as fp:
             json.dump(text_rank_conversation, fp)
-        return text_rank_conversation
 
-    def summarise_with_spacy(self) -> dict:
+    def summarize_with_spacy(self) -> None:
 
-        spacy_conversation = {}
+        spacy_conversation: dict = {}
 
         nlp = spacy.load("en_core_web_sm")
 
         nlp.add_pipe("textrank")
 
-        for (k, v) in self.conversation.items():
+        for n, (k, v) in enumerate(self.conversation.items()):
 
-            doc = nlp(v)
+            doc = nlp(v[n]["comment"])
             tr = doc._.textrank
             spacy_conversation[k] = " ".join(
                 str(x) for x in tr.summary(limit_phrases=8, limit_sentences=2)
@@ -107,53 +113,73 @@ class Summarizer:
         with open(self.database["SPACY"]["path"], "w") as fp:
             json.dump(spacy_conversation, fp)
 
-        return spacy_conversation
+    def add_author_to_database(self, username, name, avatar_url):
 
-    def add_author_to_database(self, author_name, author_avatar_url):
-        pass
+        entry = {username: {"name": name, "avatar_url": avatar_url}}
+
+        if len(self.authors) > 0:
+
+            with open(self.database["PEOPLE"]["path"], "r") as fp:
+                authors = json.load(fp)
+
+            if not authors.get(username):
+                authors[username] = entry
+                with open(self.database["PEOPLE"]["path"], "w") as fp:
+                    json.dump(authors, fp)
+
+        else:
+            with open(self.database["PEOPLE"]["path"], "w") as fp:
+                json.dump(entry, fp)
+
+        self.authors.append(username)
+
+    @staticmethod
+    def clean_up(comment):
+        comment = remove_quoted(comment)
+        comment = remove_markdown_urls(comment)
+        comment = clean(
+            comment,
+            fix_unicode=True,
+            to_ascii=True,
+            lower=False,
+            no_line_breaks=True,
+            no_urls=True,
+            no_emails=True,
+            no_phone_numbers=True,
+            no_numbers=False,
+            no_digits=False,
+            no_currency_symbols=True,
+            no_punct=False,
+        )
+        return comment
 
     def get_discussions(self) -> dict:
         for discussion in self.discussions:
-            for note in discussion.attributes["notes"]:
+            for n, note in enumerate(discussion.attributes["notes"]):
 
-                comment_id: int = note["author"]["id"]
-                author: str = note["author"]["name"]
-                author_avatar: str = note["author"]["avatar_url"]
+                gitlab_comment_id: int = note["id"]
+                username: str = note["author"]["username"]
+                name: str = note["author"]["name"]
+                avatar_url: str = note["author"]["avatar_url"]
 
-                self.add_author_to_database(author, author_avatar)
+                self.add_author_to_database(username, name, avatar_url)
 
                 body: str = note["body"]
 
-                ignored = ("changed the description", "mentioned in issue")
+                if not body.startswith(self.ignored):
 
-                if not body.startswith(ignored):
+                    body = self.clean_up(body)
 
-                    body = remove_quoted(body)
-                    body = remove_markdown_urls(body)
-                    body = clean(
-                        body,
-                        fix_unicode=True,
-                        to_ascii=True,
-                        lower=False,
-                        no_line_breaks=True,
-                        no_urls=True,
-                        no_emails=True,
-                        no_phone_numbers=True,
-                        no_numbers=False,
-                        no_digits=False,
-                        no_currency_symbols=True,
-                        no_punct=False,
-                    )
+                    entry = {
+                        n: {
+                            "gitlab_comment_id": gitlab_comment_id,
+                            "username": username,
+                            "name": name,
+                            "comment": body,
+                        }
+                    }
 
-                    if not self.conversation.get(author):
-                        self.conversation[author] = body
-                    else:
-                        self.conversation[author] += " " + body
+                    self.conversation[n] = entry
 
-        with open() as fp:
+        with open(self.database["ORIGINAL_CONVERSATION"]["path"], "w") as fp:
             json.dump(self.conversation, fp)
-
-        with open("./data/conversation/conversation.json", "w") as fp:
-            json.dump(self.conversation, fp)
-
-        return self.conversation

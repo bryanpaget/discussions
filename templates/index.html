@@ -4,6 +4,7 @@
 <main role="main">
 
   <!-- Main jumbotron for a primary marketing message or call to action -->
+
   <div class="jumbotron">
     <div class="container">
       <h1 class="display-3">Discussions!</h1>
@@ -40,6 +41,25 @@
     <hr>
 
   </div> <!-- /container -->
+  <div class="container">
+    <div class="row">
+      <div class="col">
 
+        <div class="form-floating">
+          <textarea class="form-control" placeholder="{{ summary }}" id="floatingTextarea"></textarea>
+        </div>
+        <div class="btn-group btn-group-lg" role="group" aria-label="...">
+          <a type="button" href="/kld" class="btn btn-secondary">KL Divergence</a>
+          <a type="button" href="/lsa" class="btn btn-secondary">LSA</a>
+          <a type="button" href="/textrank" class="btn btn-secondary">Text Rank</a>
+          <a type="button" href="/spacy" class="btn btn-secondary">spaCy</a>
+          <a type="button" href="/lexrank" class="btn btn-secondary">Lex Rank</a>
+        </div>
+      </div>
+    </div>
+
+    <hr>
+
+  </div> <!-- /container -->
 </main>
 {% endblock %}
