@@ -79,6 +79,7 @@ class Summarizer:
                     text_summary += " " + str(sentence)
                 summaries[k] = text_summary.strip()
 
+        print("Summary:", summaries)
         return summaries
 
     def summarize_with_kld(self) -> None:
