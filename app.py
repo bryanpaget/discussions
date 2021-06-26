@@ -59,7 +59,7 @@ if __name__ == "__main__":
 
     project_id = st.text_input("Project ID: ", value="426")
     issue_id = st.text_input("Issue ID: ", value="1413")
-    private_token = st.text_input("Private Token: ", value="nHywh9_8y2YfN6A9W2So")
+    private_token = st.text_input("Private Token: ", value="NuhXFqQ63_cdrf4ohAxF")
 
     do_summarize(
         project_id=int(project_id),
