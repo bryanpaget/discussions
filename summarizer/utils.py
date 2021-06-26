@@ -22,7 +22,7 @@ def clean_up(comment):
         fix_unicode=True,
         to_ascii=True,
         lower=False,
-        no_line_breaks=True,
+        no_line_breaks=False,
         no_urls=True,
         no_emails=True,
         no_phone_numbers=True,

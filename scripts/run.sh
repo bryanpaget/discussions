@@ -1,1 +1,3 @@
-venv/bin/python app.py
+#!/usr/bin/env bash
+
+streamlit run app.py 

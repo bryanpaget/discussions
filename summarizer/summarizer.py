@@ -1,9 +1,10 @@
 #!/usr/bin/env python
 
 from gitlab.v4.objects import users
-from utils import remove_markdown_urls, remove_quoted, clean_up
+from .utils import remove_markdown_urls, remove_quoted, clean_up
 
-import re
+import os
+
 import json
 import gitlab
 
@@ -19,26 +20,22 @@ from sumy.summarizers.lex_rank import LexRankSummarizer
 from sumy.summarizers.text_rank import TextRankSummarizer
 
 
-PROJECT_ID = 426
-ISSUE_ID = 1413
-
-
 class Summarizer:
-    """Download and summarize Gitlab conversations."""
+    """Download and summarize Gitlab conversations.
+
+    Other types of conversations will be supported in the future.
+
+    """
 
     ignored = ("changed the description", "mentioned in issue")
 
-    def __init__(self, project_id: int, issue_id: int, database: dict):
+    def __init__(
+        self, project_id: int, issue_id: int, private_token: chr, database: dict
+    ):
 
         self.database: dict = database
-
-        import os
-
         self.authors: set = set()
-
-        with open(self.database["SECRETS"]["path"], "r") as f:
-            secrets = json.load(f)
-            self.private_token = secrets["private_token"]
+        self.private_token = private_token
 
         self.gl = gitlab.Gitlab(
             "https://gitlab.gnome.org/", private_token=self.private_token
@@ -61,7 +58,7 @@ class Summarizer:
         """
 
         parsers = {}
-        summaries = {}
+        summary = {}
 
         for (k, v) in self.conversation.items():
 
@@ -71,16 +68,15 @@ class Summarizer:
             parsers[k] = PlaintextParser.from_string(v["comment"], Tokenizer("english"))
 
             for (k, v) in parsers.items():
-                summaries[k] = summarizer(v.document, 2)
+                summary[k] = summarizer(v.document, 2)
 
-            for (k, v) in summaries.items():
+            for (k, v) in summary.items():
                 text_summary = ""
                 for sentence in v:
                     text_summary += " " + str(sentence)
-                summaries[k] = text_summary.strip()
+                summary[k] = text_summary.strip()
 
-        print("Summary:", summaries)
-        return summaries
+        return summary
 
     def summarize_with_kld(self) -> None:
         kld_conversation: dict = self._summarise(KLSummarizer())
