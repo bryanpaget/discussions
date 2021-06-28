@@ -5,6 +5,10 @@ import json
 import pandas as pd
 import numpy as np
 
+import nltk
+
+nltk.download("punkt")
+
 from summarizer.summarizer import Summarizer
 from summarizer.database import *
 
