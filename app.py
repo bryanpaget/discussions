@@ -62,12 +62,6 @@ if __name__ == "__main__":
 
     create_db()
 
-    conversation, kld, lexrank, lsa, spacy, textrank = do_load_data()
-
-    st.title("Discussions")
-
-    st.write("Summarize discussions and compare methods.")
-
     project_id = st.text_input("Project ID: ", value="426")
     issue_id = st.text_input("Issue ID: ", value="1413")
     private_token = st.text_input("Private Token: ", value="NuhXFqQ63_cdrf4ohAxF")
@@ -77,6 +71,12 @@ if __name__ == "__main__":
         issue_id=int(issue_id),
         private_token=private_token,
     )
+
+    conversation, kld, lexrank, lsa, spacy, textrank = do_load_data()
+
+    st.title("Discussions")
+
+    st.write("Summarize discussions and compare methods.")
 
     option = st.selectbox(
         "Show:", ("Original", "Text Rank", "KLD", "Lex Rank", "LSA", "spaCy")
