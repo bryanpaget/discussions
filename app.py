@@ -58,11 +58,12 @@ def do_print(conversation):
 
 
 def create_db():
-    os.mkdir("./summarizer/data/")
-    os.mkdir("./summarizer/data/conversation/")
-    os.mkdir("./summarizer/data/people/")
-    os.mkdir("./summarizer/data/secrets/")
-    os.mkdir("./summarizer/data/summarized/")
+    if not os.path.exists("./summarizer/data"):
+        os.mkdir("./summarizer/data/")
+        os.mkdir("./summarizer/data/conversation/")
+        os.mkdir("./summarizer/data/people/")
+        os.mkdir("./summarizer/data/secrets/")
+        os.mkdir("./summarizer/data/summarized/")
 
 
 if __name__ == "__main__":
