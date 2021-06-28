@@ -10,8 +10,6 @@ import nltk
 
 nltk.download("punkt")
 
-subprocess.call("./scripts/install-spacy-model.sh")
-
 from summarizer.summarizer import Summarizer
 from summarizer.database import *
 
@@ -27,7 +25,6 @@ def do_summarize(project_id, issue_id, private_token):
     summarizer.summarize_with_kld()
     summarizer.summarize_with_lexrank()
     summarizer.summarize_with_lsa()
-    summarizer.summarize_with_spacy()
 
     return
 
@@ -42,12 +39,10 @@ def do_load_data():
         lexrank = json.load(f)
     with open("./summarizer/data/summarized/lsa_conversation.json", "r") as f:
         lsa = json.load(f)
-    with open("./summarizer/data/summarized/spacy_conversation.json", "r") as f:
-        spacy = json.load(f)
     with open("./summarizer/data/summarized/text_rank_conversation.json", "r") as f:
         textrank = json.load(f)
 
-    return conversation, kld, lexrank, lsa, spacy, textrank
+    return conversation, kld, lexrank, lsa, textrank
 
 
 def do_print(conversation):
@@ -80,15 +75,13 @@ if __name__ == "__main__":
         private_token=private_token,
     )
 
-    conversation, kld, lexrank, lsa, spacy, textrank = do_load_data()
+    conversation, kld, lexrank, lsa, textrank = do_load_data()
 
     st.title("Discussions")
 
     st.write("Summarize discussions and compare methods.")
 
-    option = st.selectbox(
-        "Show:", ("Original", "Text Rank", "KLD", "Lex Rank", "LSA", "spaCy")
-    )
+    option = st.selectbox("Show:", ("Original", "Text Rank", "KLD", "Lex Rank", "LSA"))
 
     if option == "Original":
         do_print(conversation)
@@ -100,5 +93,3 @@ if __name__ == "__main__":
         do_print(lexrank)
     elif option == "LSA":
         do_print(lsa)
-    elif option == "spaCy":
-        do_print(spacy)
