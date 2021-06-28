@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 
 import os
+import subprocess
 import json
 import pandas as pd
 import numpy as np
@@ -8,6 +9,8 @@ import numpy as np
 import nltk
 
 nltk.download("punkt")
+
+subprocess.run(["python", "-m", "spacy", "download", "en_core_web_sm"])
 
 from summarizer.summarizer import Summarizer
 from summarizer.database import *
