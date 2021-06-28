@@ -10,7 +10,7 @@ import nltk
 
 nltk.download("punkt")
 
-subprocess.run(["python", "-m", "spacy", "download", "en_core_web_sm"])
+subprocess.call("./scripts/install-spacy-model.sh")
 
 from summarizer.summarizer import Summarizer
 from summarizer.database import *
