@@ -15,6 +15,5 @@ if __name__ == "__main__":
     summarizer.summarize_with_kld()
     summarizer.summarize_with_lexrank()
     summarizer.summarize_with_lsa()
-    summarizer.summarize_with_spacy()
 
     print(summarizer.authors)

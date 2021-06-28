@@ -8,7 +8,6 @@ import os
 import json
 import gitlab
 
-import spacy
 import pytextrank
 
 from sumy.parsers.plaintext import PlaintextParser
@@ -97,25 +96,6 @@ class Summarizer:
         text_rank_conversation: dict = self._summarise(TextRankSummarizer())
         with open(self.database["TEXTRANK"]["path"], "w") as fp:
             json.dump(text_rank_conversation, fp)
-
-    def summarize_with_spacy(self) -> None:
-
-        spacy_conversation: dict = {}
-
-        nlp = spacy.load("en_core_web_sm")
-
-        nlp.add_pipe("textrank")
-
-        for n, (k, v) in enumerate(self.conversation.items()):
-
-            doc = nlp(v["comment"])
-            tr = doc._.textrank
-            spacy_conversation[k] = " ".join(
-                str(x) for x in tr.summary(limit_phrases=8, limit_sentences=2)
-            ).strip()
-
-        with open(self.database["SPACY"]["path"], "w") as fp:
-            json.dump(spacy_conversation, fp)
 
     def add_author_to_database(self, username, name, avatar_url):
 
