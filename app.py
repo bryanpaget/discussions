@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 
+import os
 import json
 import pandas as pd
 import numpy as np
@@ -49,7 +50,17 @@ def do_print(conversation):
     #     st.write(v.get("comment"))
 
 
+def create_db():
+    os.mkdir("./summarizer/data/")
+    os.mkdir("./summarizer/data/conversation/")
+    os.mkdir("./summarizer/data/people/")
+    os.mkdir("./summarizer/data/secrets/")
+    os.mkdir("./summarizer/data/summarized/")
+
+
 if __name__ == "__main__":
+
+    create_db()
 
     conversation, kld, lexrank, lsa, spacy, textrank = do_load_data()
 
